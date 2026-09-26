@@ -1,0 +1,5 @@
+.vscode/
+*.o
+*.so
+trace_files/
+compile_commands.json
