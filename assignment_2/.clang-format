@@ -1,0 +1,4 @@
+Language: Cpp
+UseTab: Never
+Standard: c++17
+IndentWidth: 4

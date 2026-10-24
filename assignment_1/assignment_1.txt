@@ -1,0 +1,121 @@
+In this assignment, you will use NVBit to study different aspects of two CUDA program binaries,
+namely, app1 and app2. The binary app1 should be run with file1.1, file1.2, or file1.3 as input,
+while the binary app2 should be run with file2.1, file2.2, or file2.3 as input. Unzipping the
+provided companion zip file will create a directory named CS623_assignment1 and place the
+binaries and the input files inside this directory. When the binaries are run, they will print
+certain output values, which are not particularly important. However, you must ensure that you
+are able to run the binaries.
+
+> unzip CS623_assignment1.zip
+> cd CS623_assignment1
+> ./app1 file1.1
+> ./app1 file1.2
+> ./app1 file1.3
+> ./app2 file2.1
+> ./app2 file2.2
+> ./app2 file2.3
+
+PROBLEM-I [20 points]
+----------------------
+
+Write an NVBit tool to find out the thread hierarchy used in app1 and the amount of thread
+divergence in app1. The reported thread hierarchy must include the number of thread blocks
+in each dimension and the number of threads in each dimension within a thread block. The
+amount of thread divergence for a warp instruction I is defined as
+1-((number of active threads executing I)/32). When this quantity is accumulated over all
+warp instructions executed by app1 and the sum is then divided by the number of executed warp
+instructions, we get the overall estimate of thread divergence. According to this definition,
+the maximum thread divergence is 31/32 and the minimum is zero. Please ignore predicates for
+this computation.
+
+Create a directory named control_div under the tools/ directory of the NVBit directory tree.
+Copy Makefile, instr_count.cu, and inject_funcs.cu from the tools/instr_count/ directory
+into the control_div/ directory. Make necessary changes to instr_count.cu and inject_funcs.cu
+to report the thread hierarchy and the thread divergence. Tabulate the thread hierarchy and the
+thread divergence reported by your NVBit tool for all three runs of app1 with file1.1, file1.2,
+and file1.3 as inputs.
+
+PROBLEM-II [30 points]
+----------------------
+
+Suppose the size of an instruction cache block is 32 bytes. Write an NVBit tool to find out the
+number of unique instruction cache blocks and the number of unique instructions accessed by app1
+when run with file1.1, file1.2, and file1.3 as inputs. Although NVBit does not provide the PC of
+individual instructions, it does give you the starting PC of a function and the offset of an
+instruction in bytes within the function (getOffset() method of the Instr class). Using these,
+develop a tool that can provide the PC of every instruction that is executed by an active warp.
+Ignore predicates for this problem because even the instructions with false predicates are
+accessed by active threads.
+
+Create a directory named pc_trace under the tools/ directory of the NVBit directory tree.
+Copy Makefile, mem_trace.cu, inject_funcs.cu, and common.h from the tools/mem_trace/
+directory into the pc_trace/ directory. Make necessary changes to mem_trace.cu, inject_funcs.cu,
+and common.h to generate a trace of PCs of all executed warp instructions. Write a C/C++
+program that uses this trace to compute the number of unique instruction cache blocks and the
+number of unique instructions accessed by app1 when run with file1.1, file1.2, and file1.3 as inputs.
+Tabulate your results in the report. Note that an instruction cache block can start only at
+addresses that are integral multiples of 32.
+
+PROBLEM-III
+-----------
+
+Use the mem_trace NVBit tool to generate three memory address traces when app2 is run with file2.1,
+file2.2, and file2.3. For this problem, we will need only the thread block id (same as CTA id) and
+the memory address trace. You should modify the mem_trace tool to remove the other pieces of
+information that are logged as part of the trace. That will reduce the size of the trace file. For
+this problem, assume that the size of a data cache block is 128 bytes (a data cache block starts
+at an address that is an integral multiple of 128) and that a memory access from a thread within a
+warp remains confined to the cache block containing the starting address of the access. Note that
+an address recorded in the memory trace is the starting address of an access.
+
+PART-A [10 points]
+-------------------
+
+Write a C/C++ program to compute the memory divergence per memory reference from warps.
+The memory divergence in a memory reference from a warp is defined as the number of unique data cache
+blocks accessed by the active threads of the warp divided by the number of active threads of the warp
+executing that memory reference. When the memory divergence of all warp-level memory references are
+accumulated and the sum is divided by the number of memory references, we get the memory divergence
+per memory reference. This is what your program should compute using the memory address traces. Tabulate
+the three memory divergence values that you obtain from the three memory traces.
+
+PART-B [40 points]
+-------------------
+
+Write a C/C++ program to model an array of L1 caches each of capacity 128 KB, associativity 32,
+and block size 128 bytes exercising the LRU replacement policy. Your program needs to model only the tags
+of the cache blocks. Therefore, a cache is essentially a 2D array of tags with number of rows equal to
+the number of sets and number of columns equal to the associativity. Assume that the input addresses
+are 64 bits wide. From an input address, the block address is computed by removing the block offset
+portion and then the (set index, tag) is computed from the block address as
+(block address mod number of sets, block address / number of sets). Imagine that each L1 cache
+belongs to an SM i.e., each SM has one L1 cache. The collected memory address trace is fed into this
+cache model and the model needs to output the total number of cache hits and misses. Assume that each
+memory reference by a thread is a single cache access. This study needs to be done for number of SMs
+varying from 1 to 64 in powers of two (1, 2, 4, 8, 16, 32, 64). For a configuration with n SMs (SM id
+ranges from 0 to n-1), the thread blocks are scheduled in a round robin fashion on the SMs i.e., all warps
+of thread block k are scheduled on SM id (k mod n). Process the memory references in the order recorded
+in the memory address trace files. For each SM count, report the number of L1 cache hits and misses
+aggregated over all SMs. Explain the observed trends.
+
+----------------
+WHAT TO SUBMIT
+----------------
+
+1. Run `make clean' without quotes in the tools/ directory. Place the additional C/C++ programs of
+PROBLEM-II, PROBLEM-III-A, and PROBLEM-III-B in the tools/ directory. Zip the mem_trace/, pc_trace/,
+and control_div/ directories along with the additional C/C++ programs into GroupX.zip where X is your
+CS623 group id. For example, if the additional programs are named p2.c, p3a.c, and p3b.c, the following
+command can be used to create the zip file for group 10.
+
+> zip -r Group10.zip mem_trace/ pc_trace/ control_div/ p2.c p3a.c p3b.c
+
+Please note that we will not accept any other compressed archive except a .zip file.
+
+2. Prepare a report (only pdf format will be accepted) tabulating all the required results. For each
+problem, briefly discuss what you did and highlight anything that you found interesting or surprising.
+Clearly mention which GPU machine (gpu0 or gpu3) you used to do your assignment. Name the report
+GroupX.pdf where X should be replaced by your group id.
+
+3. Send an email to [REDACTED] with subject "[CS623] Assignment#1 submission of group X" without the
+quotes and X replaced by your group id. Attach GroupX.zip and the pdf report with the email.
