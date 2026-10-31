@@ -1,4 +1,3 @@
-Language: Cpp
-UseTab: Never
-Standard: c++17
+---
+BasedOnStyle: LLVM
 IndentWidth: 4
